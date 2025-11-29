@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Widget</title>
+  <style>
+    /* ========== CSS Variables ========== */
+    :root{
+      --bg:#0a1520; --panel:#1a2f3d; --text:#e0f2fe; --muted:#7dd3fc; 
+      --accent:#00d9ff; --accent-bright:#5eacdb; --border:rgba(0,217,255,.35);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,.2);
+      --shadow-md: 0 8px 24px rgba(0,0,0,.3);
+      --shadow-lg: 0 18px 35px rgba(0,0,0,.45), 0 6px 14px rgba(0,217,255,.15);
+    }
+    
+    /* ========== Base Styles ========== */
+    *, *::before, *::after{ box-sizing: border-box; }
+    html, body{ width:100%; height:100%; }
+    body{ 
+      margin:0; background:transparent; 
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+      color:var(--text);
+      overflow:hidden; /* prevent iframe inner page scrollbars */
+    }
+    
+    /* ========== Chat Panel ========== */
+    .chat-panel{
+      width: 360px; height: 500px; border-radius: 18px; overflow: hidden;
+      background: linear-gradient(145deg, #1a2f3d, #0d1a24);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      display: flex; flex-direction: column; position: relative;
+      backdrop-filter: blur(10px);
+      }
+      .chat-panel{
+        width: 362px; height: 517px; border-radius: 18px; overflow: hidden;
+        background: linear-gradient(145deg, #1a2f3d, #0d1a24);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-lg);
+        display: flex; flex-direction: column; position: relative;
+        backdrop-filter: blur(10px);
+      }
+    
+    /* ========== Header ========== */
+    .chat-header{
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      background: rgba(26,47,61,.6); display:flex; align-items:center; gap:12px;
+      backdrop-filter: blur(8px);
+    }
+    .avatar{ 
+      width:34px; height:34px; border-radius:50%; 
+      background: linear-gradient(135deg, #1e40af, #0891b2); 
+      border:2px solid var(--accent); 
+      box-shadow: 0 0 12px rgba(0,217,255,.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%, 100%{ box-shadow: 0 0 12px rgba(0,217,255,.3); }
+      50%{ box-shadow: 0 0 20px rgba(0,217,255,.5); }
+    }
+    .title{ font-weight:700; font-size:1.08rem; }
+    .subtitle{ color: var(--muted); font-size:.86rem; margin-top:2px; }
+    
+    /* ========== Chat Body ========== */
+    .chat-body{ 
+      flex:1; padding:14px; overflow:auto; 
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) transparent;
+    }
+    .chat-body::-webkit-scrollbar{ width:6px; }
+    .chat-body::-webkit-scrollbar-thumb{ background:var(--accent); border-radius:3px; }
+    
+    /* ========== Messages ========== */
+    .msg{ 
+      max-width: 85%; margin:12px 0; padding:11px 15px; 
+      border-radius:14px; line-height:1.6; font-size:.96rem;
+      box-shadow: var(--shadow-sm);
+      animation: slideIn 0.3s ease-out;
+      word-wrap: break-word;
+    }
+    @keyframes slideIn{
+      from{ opacity:0; transform:translateY(10px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+    .bot{ 
+      background: rgba(26,47,61,.75); 
+      border:1px solid var(--border); 
+      color: var(--text);
+      border-bottom-left-radius:5px;
+    }
+    .user{ 
+      background: linear-gradient(135deg, rgba(0,217,255,.28), rgba(0,217,255,.18)); 
+      border:1px solid rgba(0,217,255,.55); 
+      color: var(--text); 
+      margin-left:auto;
+      border-bottom-right-radius:5px;
+      font-weight:500;
+    }
+    
+    /* ========== Action Chips ========== */
+    .chips{ display:flex; flex-wrap:wrap; gap:9px; margin-top:10px; }
+    .chip{ 
+      padding:8px 14px; border-radius:999px; 
+      background: rgba(30,64,175,.75); 
+      border:1px solid var(--border); 
+      color:var(--accent-bright); cursor:pointer; 
+      font-weight:600; font-size:.89rem;
+      transition: all .2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    .chip:hover{
+      background: rgba(8,145,178,.85);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 14px rgba(0,217,255,.25);
+    }
+    .chip:active{
+      transform: translateY(0);
+    }
+    
+    /* ========== Footer ========== */
+    .chat-footer{ padding:14px; border-top:1px solid var(--border); display:flex; gap:10px; }
+    input{ 
+      flex:1; padding:11px 13px; border-radius:11px; 
+      border:1px solid var(--border); 
+      background: rgba(26,47,61,.75); color: var(--text);
+      font-size:.96rem;
+      transition: all .2s;
+    }
+    input:focus{
+      outline:none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,217,255,.18);
+    }
+    button{ 
+      padding:11px 18px; border-radius:11px; 
+      border:1px solid var(--accent); 
+      background: linear-gradient(135deg, #0891b2, #1e40af); 
+      color:var(--text); font-weight:600; cursor:pointer;
+      transition: all .2s ease;
+      box-shadow: var(--shadow-sm);
+      font-size:.95rem;
+    }
+    button:hover{ 
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(0,217,255,.28);
+    }
+    button:active{ transform: translateY(0); }
+    a{ color: var(--accent-bright); text-decoration:none; transition: color .2s; }
+    a:hover{ color:var(--accent); text-decoration:underline; }
+    
+    /* ========== Settings Modal ========== */
+    .settings-icon{ 
+      margin-left:auto; cursor:pointer; font-size:1.35rem; 
+      transition: transform .3s ease; opacity:.85;
+    }
+    .settings-icon:hover{ transform:rotate(90deg); opacity:1; }
+    .settings-modal{ 
+      position:absolute; top:0; left:0; width:100%; height:100%; 
+      background:rgba(0,0,0,.82); display:none; align-items:center; 
+      justify-content:center; z-index:100;
+      backdrop-filter: blur(5px);
+    }
+    .settings-modal.active{ display:flex; animation: fadeIn .25s ease; }
+    @keyframes fadeIn{
+      from{ opacity:0; }
+      to{ opacity:1; }
+    }
+    .settings-content{ 
+      background: linear-gradient(145deg, #1a2f3d, #0d1a24); 
+      padding:26px; border-radius:15px; border:1px solid var(--border); 
+      width:85%; max-width:300px;
+      box-shadow: var(--shadow-lg);
+      animation: slideDown .3s ease;
+    }
+    @keyframes slideDown{
+      from{ transform: translateY(-20px); opacity:0; }
+      to{ transform: translateY(0); opacity:1; }
+    }
+    .settings-content h3{ margin:0 0 18px; color:var(--text); font-size:1.18rem; }
+    .settings-content label{ display:block; margin-bottom:9px; color:var(--muted); font-size:.93rem; font-weight:500; }
+    .settings-content input{ width:100%; margin-bottom:16px; box-sizing:border-box; }
+    .settings-content .btn-row{ display:flex; gap:10px; }
+    .settings-content button{ flex:1; }
+    .status{ font-size:.89rem; color:var(--accent-bright); margin-top:12px; font-weight:500; }
+  </style>
+</head>
+<body>
+  <div class="chat-panel" role="dialog" aria-label="Assistant">
+    <div class="chat-header">
+      <div class="avatar" aria-hidden="true"></div>
+      <div>
+        <div class="title">Assistant</div>
+        <div class="subtitle">Concise • Friendly • Technical</div>
+      </div>
+      <div class="settings-icon" title="Settings" role="button" aria-label="Open settings">⚙️</div>
+    </div>
+    <div class="chat-body" id="chat">
+      <div class="msg bot">Hi! I'm Dhruv's assistant. I can help you explore Skills, Projects, Timeline, or send a message. Ask me about my stack (HTML, CSS, JS, React [learning], Python, C, Git) or blockchain basics I've studied.</div>
+      <div class="chips">
+        <span class="chip" data-action="skills">Show Skills</span>
+        <span class="chip" data-action="projects">View Projects</span>
+        <span class="chip" data-action="timeline">See Timeline</span>
+        <span class="chip" data-action="contact">Contact</span>
+      </div>
+    </div>
+    <div class="chat-footer">
+      <input id="input" type="text" placeholder="Type a question..." aria-label="Message" />
+      <button id="send">Send</button>
+    </div>
+    <div class="settings-modal" id="settings-modal">
+      <div class="settings-content">
+        <h3>API Settings</h3>
+        <label for="api-key-input">Hugging Face API Key:</label>
+        <input id="api-key-input" type="password" placeholder="hf_..." />
+        <div class="btn-row">
+          <button id="save-key">Save</button>
+          <button id="clear-key">Clear</button>
+        </div>
+        <button id="close-settings" style="margin-top:10px; width:100%;">Close</button>
+        <div class="status" id="key-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== DOM Elements ==========
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
+    const settingsIcon = document.querySelector('.settings-icon');
+    const settingsModal = document.getElementById('settings-modal');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveKey = document.getElementById('save-key');
+    const clearKey = document.getElementById('clear-key');
+    const closeSettings = document.getElementById('close-settings');
+    const keyStatus = document.getElementById('key-status');
+
+    // ========== Configuration ==========
+    const API_KEY_STORAGE = 'dhruv-hf-api-key';
+    const PROXY_ENDPOINT = 'http://localhost:3000/api/chat';
+
+    const persona = {
+      tone: 'concise, friendly, direct',
+      learning:'React',
+      skills:['HTML','CSS','JavaScript','React (Learning)','Python','C','Git'],
+      focus:['Full Stack','Blockchain basics','Data Structures']
+    };
+
+    // ========== FAQ Patterns ==========
+    const faq = [
+      { q: /^(what are your|show|list).*(skill|stack|tech)/i, a: () => `My current stack: ${persona.skills.join(', ')}. I'm actively learning React.` },
+      { q: /^(show|view|see|open|browse).*(project|work)/i, a: () => `You can browse selected work in the Projects section. Click "View Projects" below.` },
+      { q: /^(show|view|see|open).*(timeline|education)/i, a: () => `Timeline: B.Tech CSE DS (2024–Present), Full Stack Development Training (2025–Present), Blockchain Fundamentals (2025–Present).` },
+      { q: /^(how do i|show|view).*(contact|email|message|reach)/i, a: () => `Feel free to send a message from the Contact section or email me at dhruv1541039@gmail.com.` },
+    ];
+
+    // ========== Helper Functions ==========
+    function add(type, text){
+      const m = document.createElement('div'); 
+      m.className = `msg ${type}`; 
+      m.textContent = text; 
+      chat.appendChild(m); 
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function routeAction(action){
+      const routes = {
+        skills: { msg: 'Opening Skills…', id: '#skills' },
+        projects: { msg: 'Opening Projects…', id: '#projects' },
+        timeline: { msg: 'Opening Timeline…', id: '#timeline' },
+        contact: { msg: 'Opening Contact…', id: '#contact' }
+      };
+      const route = routes[action];
+      if(route){
+        add('bot', route.msg);
+        parent.postMessage({ type: 'navigate', id: route.id }, '*');
+      }
+    }
+
+    // ========== Answer Logic ==========
+    async function answer(text){
+      // Check FAQ first
+      const hit = faq.find(f => f.q.test(text));
+      if(hit){ 
+        add('bot', typeof hit.a === 'function' ? hit.a() : hit.a); 
+        return; 
+      }
+      
+      // Try LLM via backend proxy for open-ended questions
+      const apiKey = localStorage.getItem(API_KEY_STORAGE);
+      if(apiKey){
+        try{
+          add('bot','Thinking...');
+          const systemPrompt = `You are Dhruv's assistant. Dhruv is a B.Tech CSE DS student at ABES, focused on Full Stack Development and Blockchain. He is concise, friendly, direct, and honest. Current skills: HTML, CSS, JavaScript, React (learning), Python, C, Git. He values clean code, accessibility, and continuous learning. Avoid overclaiming; note learning areas. Answer in 1-2 sentences unless detail is required. Reflect Dhruv's tone: no filler, clear next steps, proactive.`;
+          const prompt = `${systemPrompt}\n\nUser: ${text}\nAssistant:`;
+          console.log('Calling proxy API...');
+          
+          const res = await fetch(PROXY_ENDPOINT, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ prompt, apiKey })
+          });
+          const data = await res.json();
+          console.log('Proxy Response:', data);
+          
+          // Remove "Thinking..." message
+          if(chat.lastChild?.textContent === 'Thinking...') chat.removeChild(chat.lastChild);
+          
+          if(data && data[0] && data[0].generated_text){
+            add('bot', data[0].generated_text.trim());
+            return;
+          } else if(data.error){
+            add('bot', `API Error: ${data.error}. Check console for details.`);
+            console.error('Proxy API Error:', data);
+            return;
+          } else {
+            add('bot', `Unexpected response format. Check console.`);
+            console.error('Unexpected proxy response:', data);
+            return;
+          }
+        }catch(err){ 
+          console.error('Proxy API error:',err); 
+          if(chat.lastChild?.textContent === 'Thinking...') chat.removeChild(chat.lastChild);
+          add('bot', `Network error: ${err.message}. Make sure the proxy server is running on port 3000.`);
+        }
+      }
+      
+      // Fallback message
+      add('bot','I can help with Skills, Projects, Timeline, or Contact. You can also ask about my stack or what I\'m learning. For deeper questions, set an API key in Settings (⚙️).');
+    }
+
+    // ========== Event Listeners ==========
+    // Action chips
+    document.querySelectorAll('.chip').forEach(c => 
+      c.addEventListener('click', e => routeAction(e.target.dataset.action))
+    );
+    
+    // Send message
+    send.addEventListener('click', () => { 
+      const val = input.value.trim(); 
+      if(!val) return; 
+      add('user', val); 
+      input.value=''; 
+      answer(val); 
+    });
+    
+    // Enter key to send
+    input.addEventListener('keydown', (e) => { 
+      if(e.key === 'Enter'){ send.click(); }
+    });
+
+    // ========== Settings Panel ==========
+    function updateStatus(){
+      const key = localStorage.getItem(API_KEY_STORAGE);
+      keyStatus.textContent = key ? '✓ API key is set' : 'No API key set';
+      keyStatus.style.color = key ? 'var(--accent-bright)' : 'var(--muted)';
+    }
+    
+    settingsIcon.addEventListener('click', () => { 
+      settingsModal.classList.add('active'); 
+      updateStatus(); 
+    });
+    
+    closeSettings.addEventListener('click', () => 
+      settingsModal.classList.remove('active')
+    );
+    
+    saveKey.addEventListener('click', () => {
+      const key = apiKeyInput.value.trim();
+      if(key){
+        localStorage.setItem(API_KEY_STORAGE, key);
+        apiKeyInput.value = '';
+        updateStatus();
+        add('bot','API key saved! You can now ask open-ended questions.');
+      }
+    });
+    
+    clearKey.addEventListener('click', () => {
+      localStorage.removeItem(API_KEY_STORAGE);
+      apiKeyInput.value = '';
+      updateStatus();
+      add('bot','API key cleared.');
+    });
+    
+    // Initialize
+    updateStatus();
+  </script>
+</body>
+</html>
